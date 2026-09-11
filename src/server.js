@@ -40,7 +40,7 @@ app.use((error, req, res, next) =>{
   res.status(500).json({message: error.message});
 })
 
-express.listen(process.env.PORT, () =>{
+app.listen(process.env.PORT, () =>{
   console.log(`Server is running on PORT=${process.env.PORT}`);
 })
 
