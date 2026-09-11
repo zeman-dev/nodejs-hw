@@ -27,9 +27,10 @@ app.get("/notes/:noteId", (req, res) =>{
   });
 })
 
-app.get("/test/error.js",  (req, res, next) => {
-  next(new Error("Test error"));
+app.get('/test-error', () => {
+  throw new Error('Simulated server error');
 });
+
 
 app.use((req, res, next) => {
   res.status(404).json({message: "Route not found"});
@@ -40,7 +41,8 @@ app.use((error, req, res, next) =>{
 })
 
 app.listen(process.env.PORT || 3000, () =>{
-  console.log(`Server is running on PORT=${process.env.PORT}`);
+  const { port } = server.address();
+  console.log(`Server is running on PORT=${port}`);
 })
 
 
