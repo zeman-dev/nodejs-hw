@@ -1,4 +1,4 @@
-import express from "expsress";
+import express from "express";
 import helmet from "helmet";
 import path from "node:path";
 import "dotenv/config";
