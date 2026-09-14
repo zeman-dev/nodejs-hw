@@ -2,11 +2,11 @@ import express from "express";
 import helmet from "helmet";
 import "dotenv/config";
 import cors from "cors";
-import logger from "pino-http";
+import logger from "./middleware/logger.js"
 import {connectMongoDB} from "./db/connectMongoDB.js"
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
-import router from "./routes/notesRoutes.js";
+import notesRouter from "./routes/notesRoutes.js";
 
 const app = express();
 
@@ -18,9 +18,7 @@ app.use(logger());
 
 app.use(express.json());
 
-app.use(logger());
-
-app.use(router);
+app.use(notesRouter);
 
 app.use(notFoundHandler);
 

@@ -9,8 +9,8 @@ router.get("/notes/:noteId", getNoteById);
 
 router.post("/notes", createNote);
 
-router.patch("/notes:noteId", updateNote);
+router.patch("/notes/:noteId", updateNote);
 
-router.patch("/notes:noteId", deleteNote);
+router.delete("/notes/:noteId", deleteNote);
 
 export default router;

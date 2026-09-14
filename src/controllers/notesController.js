@@ -8,7 +8,7 @@ export async function getAllNotes(req, res) {
 
 export async function getNoteById(req, res) {
   const noteId = req.params.noteId;
-  const note = await Note.find({ _id: noteId });
+  const note = await Note.findOne({ _id: noteId });
   if (!note) {
     throw createHttpError(404, 'Note not found');
   }
