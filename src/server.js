@@ -7,8 +7,11 @@ import {connectMongoDB} from "./db/connectMongoDB.js"
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
 import notesRouter from "./routes/notesRoutes.js";
+import {errors} from "celebrate"
 
 const app = express();
+
+// {LIBRARIES}
 
 app.use(helmet());
 
@@ -18,11 +21,19 @@ app.use(logger());
 
 app.use(express.json());
 
+// {ROUTES}
+
 app.use(notesRouter);
+
+// {ERROR MIDDLEWARE}
 
 app.use(notFoundHandler);
 
+app.use(errors());
+
 app.use(errorHandler);
+
+// {CONNECTION TO DB}
 
 await connectMongoDB();
 const PORT = process.env.PORT || 3000;
