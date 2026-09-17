@@ -13,8 +13,14 @@ export async function getAllNotes(req, res) {
   }
   if (search) {
     notesQuery.where({
-      title: { $regex: search, $options: 'i' },
-      content: { $regex: search, $options: 'i' },
+      $or: [
+        {
+          title: { $regex: search, $options: 'i' },
+        },
+        {
+          content: { $regex: search, $options: 'i' },
+        },
+      ],
     });
   }
 
