@@ -11,20 +11,20 @@ export const getAllNotesSchema = {
   }),
 };
 
-const noteIdSchema = (value, helpers) => {
-  return !isValidObjectId(value) ? helpers.message('Invalid id format') : value;
+const ValidateNoteId = (value, helpers) => {
+  return !isValidObjectId(value) ? helpers.message('Invalid MongoDB ObjectId') : value;
 };
 
-export const getNoteParamNoteid = {
+export const noteIdSchema = {
   [Segments.PARAMS]: Joi.object({
-    noteId: Joi.string().custom(noteIdSchema).required(),
+    noteId: Joi.string().custom(ValidateNoteId).required(),
   }),
 };
 
 export const createNoteSchema = {
   [Segments.BODY]: Joi.object({
-    title: Joi.string().trim().min(1).max(30).required,
-    content: Joi.string().trim().max(150),
+    title: Joi.string().trim().min(1).max(30).required(),
+    content: Joi.string().trim().max(150).allow(""),
     tag: Joi.string().valid(...TAGS),
   }),
 };
@@ -33,7 +33,7 @@ export const updateNoteSchema = {
   ...getNoteParamNoteid,
   [Segments.BODY]: Joi.object({
     title: Joi.string().trim().min(1).max(30),
-    content: Joi.string().trim().max(150),
+    content: Joi.string().trim().max(150).allow(""),
     tag: Joi.string().valid(...TAGS),
   }).min(1),
 };
