@@ -30,7 +30,7 @@ export const createNoteSchema = {
 };
 
 export const updateNoteSchema = {
-  ...getNoteParamNoteid,
+  ...noteIdSchema,
   [Segments.BODY]: Joi.object({
     title: Joi.string().trim().min(1).max(30),
     content: Joi.string().trim().max(150).allow(""),
