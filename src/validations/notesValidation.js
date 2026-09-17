@@ -23,7 +23,7 @@ export const noteIdSchema = {
 
 export const createNoteSchema = {
   [Segments.BODY]: Joi.object({
-    title: Joi.string().trim().min(1).max(30).required(),
+    title: Joi.string().trim().min(1).required(),
     content: Joi.string().trim().allow(""),
     tag: Joi.string().valid(...TAGS),
   }),
@@ -32,7 +32,7 @@ export const createNoteSchema = {
 export const updateNoteSchema = {
   ...noteIdSchema,
   [Segments.BODY]: Joi.object({
-    title: Joi.string().trim().min(1).max(30),
+    title: Joi.string().trim().min(1),
     content: Joi.string().trim().allow(""),
     tag: Joi.string().valid(...TAGS),
   }).min(1),
