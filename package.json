@@ -28,7 +28,9 @@
     "nodemon": "^3.1.14"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "celebrate": "^16.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "helmet": "^8.3.0",
