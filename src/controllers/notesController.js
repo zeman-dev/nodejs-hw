@@ -6,7 +6,7 @@ export async function getAllNotes(req, res) {
 
   const skip = (page - 1) * perPage;
 
-  const notesQuery = Note.find();
+  const notesQuery = Note.find({ userId: req.user._id });
 
   if (tag) {
     notesQuery.where('tag').equal(tag);
@@ -42,7 +42,7 @@ export async function getAllNotes(req, res) {
 
 export async function getNoteById(req, res) {
   const noteId = req.params.noteId;
-  const note = await Note.findOne({ _id: noteId });
+  const note = await Note.findOne({ _id: noteId, userId: req.user._id });
   if (!note) {
     throw createHttpError(404, 'Note not found');
   }
