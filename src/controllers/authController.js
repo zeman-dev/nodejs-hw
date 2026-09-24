@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { createSession, setSessionCookies } from '../services/auth.js';
 import { Session } from '../models/session.js';
 
-export const registerUser = async (res, req) => {
+export const registerUser = async (req, res) => {
   const { email, password } = req.body;
 
   const existingUser = await User.findOne({ email });
@@ -30,12 +30,12 @@ export const loginUser = async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw createHttpError(400, 'Invalid credentials');
+    throw createHttpError(401, 'Invalid credentials');
   }
 
   const isValidPassword = await bcrypt.compare(password, user.password);
   if (!isValidPassword) {
-    throw createHttpError(400, 'Invalid credentials');
+    throw createHttpError(401, 'Invalid credentials');
   }
 
   const newSession = await createSession(user._id);

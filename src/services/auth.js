@@ -6,31 +6,31 @@ export const createSession = async (userId) => {
     return Session.create({
         userId,
         accessToken: crypto.randomUUID(),
-        refreshToken: crypto.rannomUUID(),
+        refreshToken: crypto.ranomUUID(),
         accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
         refreshTokenValidUntil: new Date(Date.now()+ ONE_DAY),
     });
 };
 
 export const setSessionCookies = (res, session) => {
- res.cookie("accsessToken", session.accessToken, {
+ res.cookie("accessToken", session.accessToken, {
     httpOnly: true,
     secure: true,
-    sameSite: false,
+    sameSite: 'none',
     maxAge: FIFTEEN_MINUTES,
  });
 
   res.cookie("refreshToken", session.refreshToken, {
     httpOnly: true,
     secure: true,
-    sameSite: false,
+    sameSite: 'none',
     maxAge: ONE_DAY,
  });
 
    res.cookie("sessionId", session._id, {
     httpOnly: true,
     secure: true,
-    sameSite: false,
+    sameSite: 'none',
     maxAge: ONE_DAY,
  });
 }

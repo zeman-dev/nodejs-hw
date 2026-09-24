@@ -50,13 +50,16 @@ export async function getNoteById(req, res) {
 }
 
 export async function createNote(req, res) {
-  const note = await Note.create(req.body);
+  const note = await Note.create({
+    ...req.body,
+    userId: req.user._id,
+  });
   res.status(201).json(note);
 }
 
 export async function updateNote(req, res) {
   const note = await Note.findOneAndUpdate(
-    { _id: req.params.noteId },
+    { _id: req.params.noteId, userId: req.user._id },
     req.body,
     { returnDocument: 'after' },
   );
@@ -67,7 +70,10 @@ export async function updateNote(req, res) {
 }
 
 export async function deleteNote(req, res) {
-  const note = await Note.findOneAndDelete({ _id: req.params.noteId });
+  const note = await Note.findOneAndDelete({
+    _id: req.params.noteId,
+    userId: req.user._id,
+  });
   if (!note) {
     throw createHttpError(404, 'Note not found');
   }

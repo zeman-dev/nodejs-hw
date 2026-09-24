@@ -8,6 +8,8 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
 import notesRouter from "./routes/notesRoutes.js";
 import {errors} from "celebrate"
+import authRouter from "./routes/authRoutes.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -17,13 +19,15 @@ app.use(helmet());
 
 app.use(cors());
 
-app.use(logger());
+app.use(logger);
 
 app.use(express.json());
 
+app.use(cookieParser())
 // {ROUTES}
 
 app.use(notesRouter);
+app.use(authRouter)
 
 // {ERROR MIDDLEWARE}
 
