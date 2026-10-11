@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt';
 import { createSession, setSessionCookies } from '../services/auth.js';
 import { Session } from '../models/session.js';
 import { sendEmail } from '../utils/sendMail.js';
-import handlebars from 'handlebars ';
+import handlebars from 'handlebars';
 
 export const registerUser = async (req, res) => {
   const { email, password } = req.body;
