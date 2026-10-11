@@ -1,4 +1,4 @@
-import { celebrate } from 'celebrate';
+import { celebrate, Segments } from 'celebrate';
 import { Router } from 'express';
 import {
   loginUserSchema,
