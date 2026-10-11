@@ -23,14 +23,30 @@ export const requestResetEmail = async (req, res) => {
    { expiresIn: "15m" },
 );
 
-const frontendUrl = `${process.env.FRONTEND_URL}?token=${resetToken}`    ;
+const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+ const templatePath = path.resolve(
+    'src',
+    'templates',
+    'reset-password-email.html',
+  );
+
+    
+
+    const source = await fs.readFile(templatePath, 'utf-8');
+  const template = handlebars.compile(source);
+
+  const html = template({
+    username: user.username || user.email,
+    link: resetLink,
+  });
 
  try {
  await sendEmail({
          from: process.env.SMTP_FROM,
       to: email,
       subject: "Reset your password",
-      html: `<p>Click <a href="${frontendUrl}">here</a> to reset your password!</p>`,
+      html,
     });
 }catch(error){
  throw createHttpError(502, "Failed to send email, please try again later")
