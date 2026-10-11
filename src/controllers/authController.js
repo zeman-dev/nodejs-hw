@@ -1,3 +1,6 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
 import jwt from 'jsonwebtoken';
 import createHttpError from 'http-errors';
 import { User } from '../models/user.js';
@@ -5,6 +8,7 @@ import bcrypt from 'bcrypt';
 import { createSession, setSessionCookies } from '../services/auth.js';
 import { Session } from '../models/session.js';
 import { sendEmail } from '../utils/sendMail.js';
+import handlebars from 'handlebars ';
 
 export const registerUser = async (req, res) => {
   const { email, password } = req.body;
@@ -102,7 +106,7 @@ export const requestResetEmail = async (req, res) => {
  const user = await User.findOne({ email })
 
  if(!user){
-    return res.staus(200).json({
+    return res.status(200).json({
     message: 'Password reset email sent successfully',
  });
  }
@@ -113,7 +117,7 @@ export const requestResetEmail = async (req, res) => {
    { expiresIn: "15m" },
 );
 
-const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+const resetLink = `${process.env.FRONTEND_DOMAIN}/reset-password?token=${resetToken}`;
 
  const templatePath = path.resolve(
     'src',
@@ -139,10 +143,10 @@ const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken
       html,
     });
 }catch(error){
- throw createHttpError(502, "Failed to send email, please try again later")
+ throw createHttpError(500, "Failed to send email, please try again later")
 }
 
- res.staus(200).json({
+ res.status(200).json({
     message: 'Password reset email sent successfully',
  });
 }

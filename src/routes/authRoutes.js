@@ -26,15 +26,13 @@ router.post('/auth/logout', logoutUser);
 router.post('/auth/refresh', refreshUserSession);
 
 router.post(
-  '/request-reset-email',
-  celebrate({
-    [Segments.BODY]: requestResetEmailSchema,
-  }),
+  '/auth/request-reset-email',
+  celebrate(requestResetEmailSchema),
   requestResetEmail,
 );
 
 router.post(
-  '/reset-password',
+  '/auth/reset-password',
   celebrate({
     [Segments.BODY]: resetPasswordSchema,
   }),
