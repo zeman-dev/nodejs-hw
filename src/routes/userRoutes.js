@@ -1,9 +1,10 @@
 import { celebrate } from "celebrate";
 import {Router}  from "express";
 import { requestResetEmailSchema, resetPasswordSchema } from "../validations/authValidation.js";
-import { requestResetEmail, resetPassword, updateUserAvatar } from "../controllers/userController.js";
+import { updateUserAvatar } from "../controllers/userController.js";
 import { authenticate } from "../middleware/authenticate.js";
 import { upload } from "../middleware/multer.js";
+import { requestResetEmail, resetPassword } from "../controllers/authController.js";
 
 const router = Router();
 
