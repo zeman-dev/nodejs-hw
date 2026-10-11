@@ -7,9 +7,9 @@ import {connectMongoDB} from "./db/connectMongoDB.js"
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFoundHandler } from "./middleware/notFoundHandler.js";
 import notesRouter from "./routes/notesRoutes.js";
-import userRouter from "./routes/userRoutes.js"
-import {errors} from "celebrate"
+import userRouter from "./routes/userRoutes.js";
 import authRouter from "./routes/authRoutes.js";
+import {errors} from "celebrate";
 import cookieParser from "cookie-parser";
 
 const app = express();

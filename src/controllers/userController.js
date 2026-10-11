@@ -4,6 +4,7 @@ import { Session } from "../models/session.js"
 import { sendEmail } from '../utils/sendMail.js';
 import createHttpError from 'http-errors';
 import bcrypt from "bcrypt"
+import { saveFileToCloudinary } from "../utils/saveFileToCloudinary.js";
 
 export const requestResetEmail = async (req, res) => {
  const { email } = req.body;
@@ -65,5 +66,22 @@ res.status(200).json({
    message: "Password reset successfuly. Please log again",
 })
 
-}
+};
 
+export const updateUserAvatar = async (req, res) => {
+  if (!req.file) {
+    throw createHttpError(400, "No file");
+  }
+
+  const result = await saveFileToCloudinary(req.file.buffer, req.user._id);
+
+  console.log(result);
+
+  const updatedUser = await User.findOneAndUpdate(
+    { _id: req.user._id },
+    { avatar: result.secure_url },
+    { returnDocument: "after" },
+  );
+
+  res.status(200).json({ url: updatedUser.avatar });
+};
