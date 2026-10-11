@@ -9,6 +9,6 @@ import nodemailer from "nodemailer";
     },
  });
 
- export const sendEmail = (options) => {
+ export const sendEmail =  async (options) => {
     return transporter.sendMail(options);
  }

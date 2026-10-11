@@ -14,7 +14,7 @@ router.post('/auth/reset-password', celebrate(resetPasswordSchema), resetPasswor
 router.patch(
   "/users/me/avatar",
   authenticate,
-  upload.single("photo"),
+  upload.single("avatar"),
   updateUserAvatar,
 );
 
