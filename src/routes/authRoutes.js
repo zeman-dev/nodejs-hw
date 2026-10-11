@@ -33,9 +33,7 @@ router.post(
 
 router.post(
   '/auth/reset-password',
-  celebrate({
-    [Segments.BODY]: resetPasswordSchema,
-  }),
+  celebrate(resetPasswordSchema),
   resetPassword,
 );
 
