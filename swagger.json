@@ -1,0 +1,828 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "01-express API",
+    "description": "Session-based authentication and personal notes API. Authentication uses httpOnly cookies: `sessionId` and `accessToken` are required for protected endpoints, `refreshToken` is used together with `sessionId` to refresh an expired session.",
+    "version": "1.0.0",
+    "license": {
+      "name": "ISC",
+      "url": "https://opensource.org/licenses/ISC"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Registration, login, logout and session refresh"
+    },
+    {
+      "name": "Notes",
+      "description": "CRUD operations on the authenticated user's notes"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "sessionIdCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sessionId",
+        "description": "Session identifier stored in an httpOnly cookie when the user logs in or registers."
+      },
+      "accessTokenCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "accessToken",
+        "description": "Short-lived (15 minutes) access token stored in an httpOnly cookie."
+      },
+      "refreshTokenCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "refreshToken",
+        "description": "Long-lived (24 hours) refresh token stored in an httpOnly cookie. Used together with `sessionId` to refresh a session."
+      }
+    },
+    "parameters": {
+      "NoteId": {
+        "name": "noteId",
+        "in": "path",
+        "required": true,
+        "description": "MongoDB ObjectId of the note (24 hexadecimal characters).",
+        "schema": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$",
+          "example": "66f1c2a9e4b0a1b2c3d4e5f6"
+        }
+      }
+    },
+    "schemas": {
+      "NoteTag": {
+        "type": "string",
+        "description": "Note category.",
+        "enum": [
+          "Work",
+          "Personal",
+          "Meeting",
+          "Shopping",
+          "Ideas",
+          "Travel",
+          "Finance",
+          "Health",
+          "Important",
+          "Todo"
+        ],
+        "default": "Todo"
+      },
+      "Note": {
+        "type": "object",
+        "required": ["_id", "title", "content", "tag", "userId", "createdAt", "updatedAt"],
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId.",
+            "example": "66f1c2a9e4b0a1b2c3d4e5f6"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Buy groceries"
+          },
+          "content": {
+            "type": "string",
+            "default": "",
+            "example": "Milk, eggs, bread"
+          },
+          "tag": {
+            "$ref": "#/components/schemas/NoteTag"
+          },
+          "userId": {
+            "type": "string",
+            "description": "MongoDB ObjectId of the note owner.",
+            "example": "66f1c2a9e4b0a1b2c3d4e5f7"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "__v": {
+            "type": "integer",
+            "readOnly": true
+          }
+        }
+      },
+      "NotesPage": {
+        "type": "object",
+        "required": ["page", "perPage", "totalNotes", "totalPages", "notes"],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "example": 1
+          },
+          "perPage": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 20,
+            "example": 10
+          },
+          "totalNotes": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 42
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 5
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Note"
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["_id", "username", "email", "createdAt", "updatedAt"],
+        "properties": {
+          "_id": {
+            "type": "string",
+            "description": "MongoDB ObjectId.",
+            "example": "66f1c2a9e4b0a1b2c3d4e5f7"
+          },
+          "username": {
+            "type": "string",
+            "description": "Defaults to the user's email address.",
+            "example": "user@example.com"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "__v": {
+            "type": "integer",
+            "readOnly": true
+          }
+        }
+      },
+      "RegisterUserBody": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "supersecret"
+          }
+        }
+      },
+      "LoginUserBody": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "supersecret"
+          }
+        }
+      },
+      "CreateNoteBody": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Buy groceries"
+          },
+          "content": {
+            "type": "string",
+            "description": "Empty string is allowed.",
+            "example": "Milk, eggs, bread"
+          },
+          "tag": {
+            "$ref": "#/components/schemas/NoteTag"
+          }
+        }
+      },
+      "UpdateNoteBody": {
+        "type": "object",
+        "minProperties": 1,
+        "description": "At least one of the listed properties must be provided.",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "example": "Buy groceries"
+          },
+          "content": {
+            "type": "string",
+            "description": "Empty string is allowed.",
+            "example": "Milk, eggs, bread"
+          },
+          "tag": {
+            "$ref": "#/components/schemas/NoteTag"
+          }
+        }
+      },
+      "SessionRefreshed": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Session refreshed"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Note not found"
+          }
+        }
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "description": "Response produced by the celebrate errors() middleware when Joi validation fails.",
+        "required": ["statusCode", "error", "message", "validation"],
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "enum": [400],
+            "example": 400
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          },
+          "message": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "validation": {
+            "type": "object",
+            "description": "Keyed by request segment (body, query or params).",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["source", "keys", "message"],
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "example": "body"
+                },
+                "keys": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "example": ["email"]
+                },
+                "message": {
+                  "type": "string",
+                  "example": "\"email\" must be a valid email"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Request validation failed (celebrate/Joi) or an invalid MongoDB ObjectId was supplied.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing, invalid, expired or unknown session credentials.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "examples": {
+              "missingCredentials": {
+                "value": { "message": "Missing session credentials" }
+              },
+              "sessionNotFound": {
+                "value": { "message": "Session not found" }
+              },
+              "accessTokenExpired": {
+                "value": { "message": "Access token expired" }
+              },
+              "userNotFound": {
+                "value": { "message": "User not found" }
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The requested note does not exist or does not belong to the authenticated user.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": { "message": "Note not found" }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Unexpected server error.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new user",
+        "description": "Creates a user with the given email and password, starts a new session and sets the `sessionId`, `accessToken` and `refreshToken` httpOnly cookies.",
+        "operationId": "registerUser",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterUserBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully. Session cookies are set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed or the email is already in use.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationErrorResponse"
+                    }
+                  ]
+                },
+                "examples": {
+                  "emailInUse": {
+                    "value": { "message": "Email in use" }
+                  },
+                  "validationError": {
+                    "value": {
+                      "statusCode": 400,
+                      "error": "Bad Request",
+                      "message": "Validation failed",
+                      "validation": {
+                        "body": {
+                          "source": "body",
+                          "keys": ["password"],
+                          "message": "\"password\" length must be at least 8 characters long"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log in",
+        "description": "Validates the credentials, removes any existing sessions for the user, creates a new session and sets the `sessionId`, `accessToken` and `refreshToken` httpOnly cookies.",
+        "operationId": "loginUser",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginUserBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logged in successfully. Session cookies are set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "description": "Invalid email or password.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": { "message": "Invalid credentials" }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log out",
+        "description": "Deletes the current session (when a `sessionId` cookie is present) and clears the `sessionId`, `accessToken` and `refreshToken` cookies.",
+        "operationId": "logoutUser",
+        "security": [
+          {
+            "sessionIdCookie": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Logged out. Cookies are cleared and no response body is returned."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh the session",
+        "description": "Validates the `sessionId` and `refreshToken` cookies, replaces the old session with a new one and sets fresh session cookies. The old session is deleted.",
+        "operationId": "refreshUserSession",
+        "security": [
+          {
+            "sessionIdCookie": [],
+            "refreshTokenCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session refreshed. New session cookies are set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionRefreshed"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Session credentials are missing, the session does not exist or the refresh token expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "missingCredentials": {
+                    "value": { "message": "Missing session credentials" }
+                  },
+                  "sessionNotFound": {
+                    "value": { "message": "Session not found" }
+                  },
+                  "sessionTokenExpired": {
+                    "value": { "message": "Session token expired" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/notes": {
+      "get": {
+        "tags": ["Notes"],
+        "summary": "List notes",
+        "description": "Returns a paginated list of the authenticated user's notes. Results can be filtered by tag and by a case-insensitive search over title and content.",
+        "operationId": "getAllNotes",
+        "security": [
+          {
+            "sessionIdCookie": [],
+            "accessTokenCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number (1-based).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "required": false,
+            "description": "Number of notes per page.",
+            "schema": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 20,
+              "default": 10
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "description": "Filter notes by tag.",
+            "schema": {
+              "$ref": "#/components/schemas/NoteTag"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive search across note title and content. An empty string is allowed.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated notes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Notes"],
+        "summary": "Create a note",
+        "description": "Creates a note owned by the authenticated user. `content` defaults to an empty string and `tag` defaults to `Todo` at the model level.",
+        "operationId": "createNote",
+        "security": [
+          {
+            "sessionIdCookie": [],
+            "accessTokenCookie": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Note created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/notes/{noteId}": {
+      "get": {
+        "tags": ["Notes"],
+        "summary": "Get a note by id",
+        "description": "Returns a single note belonging to the authenticated user.",
+        "operationId": "getNoteById",
+        "security": [
+          {
+            "sessionIdCookie": [],
+            "accessTokenCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NoteId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested note.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Notes"],
+        "summary": "Update a note",
+        "description": "Updates one or more fields of a note owned by the authenticated user. At least one field must be provided.",
+        "operationId": "updateNote",
+        "security": [
+          {
+            "sessionIdCookie": [],
+            "accessTokenCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NoteId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNoteBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated note.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Notes"],
+        "summary": "Delete a note",
+        "description": "Deletes a note owned by the authenticated user and returns the deleted note.",
+        "operationId": "deleteNote",
+        "security": [
+          {
+            "sessionIdCookie": [],
+            "accessTokenCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/NoteId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The deleted note.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    }
+  }
+}
