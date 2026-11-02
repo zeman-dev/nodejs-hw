@@ -19,7 +19,12 @@ const app = express();
 
 app.use(helmet());
 
-app.use(cors());
+app.use(
+  cors({
+    origin: 'https://09-auth-neon-omega.vercel.app',
+    credentials: true,
+  }),
+);
 
 app.use(logger());
 
