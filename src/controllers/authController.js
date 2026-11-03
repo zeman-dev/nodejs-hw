@@ -93,8 +93,3 @@ export const refreshUserSession = async (req, res) => {
   res.status(200).json({ message: 'Session refreshed' });
 };
 
-export const getCurrentUser = async (req, res) => {
-  const user = req.user;
-
-  res.status(200).json( user );
-};

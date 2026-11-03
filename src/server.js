@@ -9,6 +9,7 @@ import { notFoundHandler } from './middleware/notFoundHandler.js';
 import notesRouter from './routes/notesRoutes.js';
 import { errors } from 'celebrate';
 import authRouter from './routes/authRoutes.js';
+import userRouter from './routes/userRoutes.js';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import swaggerDocument from '../swagger.json' with { type: 'json' };
@@ -38,6 +39,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(notesRouter);
 app.use(authRouter);
+app.use(userRouter);
 
 // {ERROR MIDDLEWARE}
 
