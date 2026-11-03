@@ -23,6 +23,6 @@ router.post('/auth/logout', logoutUser);
 
 router.post('/auth/refresh', refreshUserSession);
 
-router.get('users/me', authenticate, getCurrentUser)
+router.get('/users/me', authenticate, getCurrentUser)
 
 export default router;
